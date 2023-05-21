@@ -6,7 +6,7 @@ import dash_mantine_components as dmc
 from dash.exceptions import PreventUpdate
 import plotly.express as px
 import plotly.graph_objs as go
-from queries import read_data
+from queries import read_data, make_colors
 from datetime import datetime
 import numpy as np
 import pandas as pd
@@ -27,24 +27,29 @@ class EncostDash(DashProxy):
 app = EncostDash(name=__name__)
 
 df = read_data()
+customdata = np.stack((
+    df['state'],
+    df['reason'],
+    df['state_begin'],
+    df['duration_min'],
+    df['shift_day'],
+    df['shift_name'],
+    df['operator']
+), axis=-1)
+
 my_pie = px.pie(df, values='duration_hour', names='state')
-my_tl = px.timeline(df, x_start=df["state_begin"], x_end=df["state_end"],
-                    color=df["color"], y=df["client_name"],
-                    custom_data=['color'])
-my_tl.update_layout(showlegend=False, xaxis_title='', yaxis_title='')
-my_tl.update_traces(customdata=np.stack((df['state'], df['reason'], df['state_begin'],
-                                         df['duration_min'], df['shift_day'],
-                                         df['shift_name'], df['operator']), axis=-1),
-                    hovertemplate='Состояние %{customdata[0]}<br>'
+my_tl = px.timeline(df, x_start="state_begin", x_end="state_end",
+                    color='state', y="client_name", custom_data=['state', 'reason', 'state_begin', 'duration_min',
+                                                                 'shift_day', 'shift_name', 'operator'])
+my_tl.update_layout(showlegend=True, xaxis_title='', yaxis_title='')
+my_tl.update_traces(hovertemplate='Состояние %{customdata[0]}<br>'
                                   'Причина: %{customdata[1]}<br>'
                                   'Начало %{customdata[2]|%Y-%m-%d %H:%M:%S}<br>'
                                   'Длительность: %{customdata[3]:.2f} мин<br><br>'
                                   'Сменный день: %{customdata[4]|%Y-%m-%d}<br>'
                                   'Смена %{customdata[5]}<br>'
                                   'Оператор: %{customdata[6]}<br>'
-
                     )
-
 
 def get_layout():
     return html.Div([
@@ -94,7 +99,7 @@ def update_div1(
 ):
     if click is None:
         raise PreventUpdate
-
+    my_tl.update_traces()
     return f'Первая кнопка нажата, данные: {value}'
 
 

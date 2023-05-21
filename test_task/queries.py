@@ -16,4 +16,4 @@ def format_date(date):
 
 
 def format_time(date):
-    return date.strftime('%Y-%m-%d %H:%M:%S')
+    return date.strftime('%Y-%m-%d %H:%M:%S.%f')
