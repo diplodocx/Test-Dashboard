@@ -18,6 +18,8 @@ def get_colors():
 
 def update_colors(chosen_state):
     colors = get_colors()
+    if chosen_state == "Все состояния":
+        return colors
     for state, color in colors.items():
         if state == chosen_state:
             continue

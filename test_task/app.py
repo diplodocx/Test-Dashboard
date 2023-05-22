@@ -59,9 +59,12 @@ def create_timeline(colors: dict):
     return tl
 
 
+color_map = get_colors()
 my_pie = px.pie(df, values='duration_hour', names='state',
-                color='state', color_discrete_map=get_colors())
-my_tl = create_timeline(get_colors())
+                color='state', color_discrete_map=color_map)
+my_tl = create_timeline(color_map)
+chooses = [x for x in color_map.keys()]
+chooses.append("Все состояния")
 
 
 def get_layout():
@@ -70,8 +73,8 @@ def get_layout():
             dmc.Grid([
                 dmc.Col([
                     dmc.Card([
-                        dmc.TextInput(
-                            label='Введите что-нибудь',
+                        dcc.Dropdown(
+                            chooses,
                             id='input'),
                         dmc.Button(
                             'Фильтровать',
@@ -113,7 +116,7 @@ def update_div1(
 ):
     if click is None:
         raise PreventUpdate
-    up_tl = create_timeline(update_colors("Наладка"))
+    up_tl = create_timeline(update_colors(value))
     return up_tl
 
 
