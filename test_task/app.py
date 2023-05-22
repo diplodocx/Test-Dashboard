@@ -45,8 +45,8 @@ def create_timeline(colors: dict):
     #
     tl = px.timeline(df, x_start="state_begin", x_end="state_end",
                      color_discrete_map=colors,
-                     color='state', y="client_name", custom_data=['state', 'reason', 'state_begin', 'duration_min',
-                                                                  'shift_day', 'shift_name', 'operator'])
+                     color='state', y="endpoint_name", custom_data=['state', 'reason', 'state_begin', 'duration_min',
+                                                                    'shift_day', 'shift_name', 'operator'])
     tl.update_layout(showlegend=True, xaxis_title='', yaxis_title='')
     tl.update_traces(hovertemplate='Состояние %{customdata[0]}<br>'
                                    'Причина: %{customdata[1]}<br>'
@@ -73,14 +73,21 @@ def get_layout():
             dmc.Grid([
                 dmc.Col([
                     dmc.Card([
+                        html.Div([
+                            html.B(f"Клиент: {df['client_name'][0]}"),
+                            html.Div(f"Смена: {df['shift_day'][0]}"),
+                            html.Div(f"Точка учета: {df['endpoint_name'][0]}"),
+                            html.Div(f"Начало периода: {df['shift_begin'][0]}"),
+                            html.Div(f"Конец периода: {df['shift_end'][0]}"),
+                        ]
+                        ),
                         dcc.Dropdown(
                             chooses,
+                            placeholder="Выберите состояние",
                             id='input'),
                         dmc.Button(
                             'Фильтровать',
-                            id='button1'),
-                        html.Div(
-                            id='output')],
+                            id='button1')],
                         **CARD_STYLE)
                 ], span=6),
                 dmc.Col([
