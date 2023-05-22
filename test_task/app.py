@@ -1,3 +1,5 @@
+import copy
+
 from dash import html, Output, Input, State, dcc
 from dash_extensions.enrich import (DashProxy,
                                     ServersideOutputTransform,
@@ -6,10 +8,11 @@ import dash_mantine_components as dmc
 from dash.exceptions import PreventUpdate
 import plotly.express as px
 import plotly.graph_objs as go
-from queries import read_data, make_colors
+from queries import read_data
 from datetime import datetime
 import numpy as np
 import pandas as pd
+from colors import get_colors, update_colors
 
 CARD_STYLE = dict(withBorder=True,
                   shadow="sm",
@@ -27,29 +30,39 @@ class EncostDash(DashProxy):
 app = EncostDash(name=__name__)
 
 df = read_data()
-customdata = np.stack((
-    df['state'],
-    df['reason'],
-    df['state_begin'],
-    df['duration_min'],
-    df['shift_day'],
-    df['shift_name'],
-    df['operator']
-), axis=-1)
 
-my_pie = px.pie(df, values='duration_hour', names='state')
-my_tl = px.timeline(df, x_start="state_begin", x_end="state_end",
-                    color='state', y="client_name", custom_data=['state', 'reason', 'state_begin', 'duration_min',
-                                                                 'shift_day', 'shift_name', 'operator'])
-my_tl.update_layout(showlegend=True, xaxis_title='', yaxis_title='')
-my_tl.update_traces(hovertemplate='Состояние %{customdata[0]}<br>'
-                                  'Причина: %{customdata[1]}<br>'
-                                  'Начало %{customdata[2]|%Y-%m-%d %H:%M:%S}<br>'
-                                  'Длительность: %{customdata[3]:.2f} мин<br><br>'
-                                  'Сменный день: %{customdata[4]|%Y-%m-%d}<br>'
-                                  'Смена %{customdata[5]}<br>'
-                                  'Оператор: %{customdata[6]}<br>'
-                    )
+
+def create_timeline(colors: dict):
+    # customdata = np.stack((
+    #     df['state'],
+    #     df['reason'],
+    #     df['state_begin'],
+    #     df['duration_min'],
+    #     df['shift_day'],
+    #     df['shift_name'],
+    #     df['operator']
+    # ), axis=-1)
+    #
+    tl = px.timeline(df, x_start="state_begin", x_end="state_end",
+                     color_discrete_map=colors,
+                     color='state', y="client_name", custom_data=['state', 'reason', 'state_begin', 'duration_min',
+                                                                  'shift_day', 'shift_name', 'operator'])
+    tl.update_layout(showlegend=True, xaxis_title='', yaxis_title='')
+    tl.update_traces(hovertemplate='Состояние %{customdata[0]}<br>'
+                                   'Причина: %{customdata[1]}<br>'
+                                   'Начало %{customdata[2]|%Y-%m-%d %H:%M:%S}<br>'
+                                   'Длительность: %{customdata[3]:.2f} мин<br><br>'
+                                   'Сменный день: %{customdata[4]|%Y-%m-%d}<br>'
+                                   'Смена %{customdata[5]}<br>'
+                                   'Оператор: %{customdata[6]}<br>'
+                     )
+    return tl
+
+
+my_pie = px.pie(df, values='duration_hour', names='state',
+                color='state', color_discrete_map=get_colors())
+my_tl = create_timeline(get_colors())
+
 
 def get_layout():
     return html.Div([
@@ -75,7 +88,8 @@ def get_layout():
                 ], span=6),
                 dmc.Col([
                     dmc.Card([
-                        dcc.Graph(figure=my_tl)
+                        dcc.Graph(figure=my_tl,
+                                  id='timeline')
                     ],
                         **CARD_STYLE)
                 ], span=12),
@@ -88,10 +102,10 @@ app.layout = get_layout()
 
 
 @app.callback(
-    Output('output', 'children'),
+    Output('timeline', 'figure'),
     State('input', 'value'),
     Input('button1', 'n_clicks'),
-    prevent_initial_call=True,
+    # prevent_initial_call=True,
 )
 def update_div1(
         value,
@@ -99,8 +113,8 @@ def update_div1(
 ):
     if click is None:
         raise PreventUpdate
-    my_tl.update_traces()
-    return f'Первая кнопка нажата, данные: {value}'
+    up_tl = create_timeline(update_colors("Наладка"))
+    return up_tl
 
 
 if __name__ == '__main__':
